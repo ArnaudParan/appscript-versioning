@@ -1,11 +1,32 @@
 var gulp = require('gulp');
 var request = require('request');
 var fs = require('fs');
+var glob = require('glob');
+var _ = require('lodash');
 
-gulp.task('default', function() {
+gulp.task('deploy', function() {
   readConfig(function(configs) {
     getAppscriptList(configs, function(appscriptList) {
-      console.log(appscriptList);
+      /* When we have all the scripts metadata, and the files, we replace the contents
+       * and push them to the drive
+       */
+      glob('src/*.gs', function(err, files) {
+        var uploadedFiles = {files: []};
+        for (var scriptId = 0; scriptId < appscriptList.files.length; scriptId++) {
+          var script = appscriptList.files[scriptId];
+          var scriptName = 'src/' + script.name + '.gs';
+
+          // if the file exists in src, we add the modifications in what we're going to push
+          if (files.indexOf(scriptName) !== -1) {
+            //TODO update data
+            var metadata = _.cloneDeep(script);
+            var file = fs.readFileSync(scriptName, 'utf8')
+            metadata.source = file;
+            uploadedFiles.files.push(metadata);
+          }
+        }
+        pushUpdates(uploadedFiles, configs);
+      });
     });
   });
 });
@@ -25,6 +46,28 @@ function readConfig(callback) {
     }
     var configs = JSON.parse(file);
     callback(configs);
+  });
+}
+
+/* sends the file updates to google drive
+ */
+function pushUpdates(updates, configs) {
+  var options = {
+    url: 'https://www.googleapis.com/upload/drive/v2/files/' + configs.appscriptID,
+    headers: {
+      'Authorization': 'Bearer ' + configs.accessToken,
+      'Content-Type': 'application/vnd.google-apps.script+json'
+    },
+    method: 'PUT',
+    body: JSON.stringify(updates)
+  };
+  request(options, function(error, response, body) {
+    if (error) {
+      throw error;
+    }
+    else if (response.statusCode !== 200) {
+      throw 'Wrong response code ' + response.statusCode + '\n' + body;
+    }
   });
 }
 
