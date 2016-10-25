@@ -18,5 +18,9 @@
   "homepage": "https://github.com/ArnaudParan/appscript-versioning#readme",
   "devDependencies": {
     "gulp": "^3.9.1"
+  },
+  "dependencies": {
+    "fs": "0.0.1-security",
+    "request": "^2.76.0"
   }
 }
