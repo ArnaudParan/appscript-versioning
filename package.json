@@ -1,0 +1,22 @@
+{
+  "name": "appscript-versioning",
+  "version": "1.0.0",
+  "description": "project bootstrap to do versioning on appscript projects",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ArnaudParan/appscript-versioning.git"
+  },
+  "author": "Arnaud Paran, Dannick Montanede",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ArnaudParan/appscript-versioning/issues"
+  },
+  "homepage": "https://github.com/ArnaudParan/appscript-versioning#readme",
+  "devDependencies": {
+    "gulp": "^3.9.1"
+  }
+}
