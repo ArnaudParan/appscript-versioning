@@ -10,21 +10,52 @@ gulp.task('deploy', function() {
       /* When we have all the scripts metadata, and the files, we replace the contents
        * and push them to the drive
        */
-      glob('src/*.gs', function(err, files) {
-        var uploadedFiles = {files: []};
-        for (var scriptId = 0; scriptId < appscriptList.files.length; scriptId++) {
-          var script = appscriptList.files[scriptId];
-          var scriptName = 'src/' + script.name + '.gs';
+      glob('src/*', {'nodir': true}, function(err, files) {
+        // Creating a dict which will store files path we will compare with files
+        var driveScriptsByName = {};
+        appscriptList.files.forEach(function(script) {
+          var scriptName = 'src/' + script.name;
+          // Add the correct suffix with the file type
+          if (script.type === 'server_js') {
+            scriptName += '.gs';
+          }
+          else {
+            scriptName += '.' + script.type;
+          }
+          // Add the script to the dictionnary with its name
+          driveScriptsByName[scriptName] = script;
+        });
 
-          // if the file exists in src, we add the modifications in what we're going to push
-          if (files.indexOf(scriptName) !== -1) {
-            //TODO update data
-            var metadata = _.cloneDeep(script);
-            var file = fs.readFileSync(scriptName, 'utf8')
+        // Pushes the files to create or update in uploadedFiles
+        var uploadedFiles = {files: []};
+        files.forEach(function(filePath) {
+          if (filePath in driveScriptsByName) {
+            // Update
+            var metadata = _.cloneDeep(driveScriptsByName[filePath]);
+            var file = fs.readFileSync(filePath, 'utf8')
             metadata.source = file;
             uploadedFiles.files.push(metadata);
           }
-        }
+          else {
+            // Create
+            var metadata = {}
+            try {
+              metadata.name = filePath.match(/src\/(.*)\..*/)[1];
+              metadata.type = filePath.match(/src\/.*\.(.*)/)[1];
+            }
+            catch (e) {
+              if (e instanceof TypeError) {
+                throw 'You\'ve created a file without extension in src, please give it a good extension';
+              }
+            }
+            if (metadata.type === 'gs') {
+              metadata.type = 'server_js';
+            }
+            var file = fs.readFileSync(filePath, 'utf8')
+            metadata.source = file;
+            uploadedFiles.files.push(metadata);
+          }
+        });
         pushUpdates(uploadedFiles, configs);
       });
     });
